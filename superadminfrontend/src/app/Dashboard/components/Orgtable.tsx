@@ -3,16 +3,17 @@
 import { Edit2, Trash2, MoreVertical, CheckCircle, XCircle, Clock } from 'lucide-react';
 
 export interface Organization {
-  id: string;
+  organization_id: string;
   name: string;
   domain: string;
-  industry: string;
+  industry_type: string;
   size: string;
   status: string;
   description?: string;
   email?: string;
   address?: string;
   country?: string;
+  phone?: string;
   state?: string;
   city?: string;
   pincode?: string;
@@ -21,11 +22,12 @@ export interface Organization {
   created_at?: string;
 
   admin?: {
-    admin_name: string;
-    admin_email: string;
+    name: string;
+    email: string;
     role: string;
     admin_phone?: string;
-    admin_password?: string; //  added
+    password?: string; //  added
+    confirm_password?: string; // added
     // profile_image?: string | File | null; // backend returns image URL
     profile_image?: string; // backend returns image URL
   };
@@ -122,7 +124,7 @@ export default function OrgTable({ organizations, onEdit, onDelete }: OrgTablePr
           </thead>
           <tbody className="divide-y divide-gray-700">
             {organizations.map((org) => (
-              <tr key={org.id} className="hover:bg-gray-800/50 transition-colors">
+              <tr key={org.organization_id} className="hover:bg-gray-800/50 transition-colors">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#6b46c1] to-[#d53f8c] flex items-center justify-center flex-shrink-0">
@@ -142,7 +144,7 @@ export default function OrgTable({ organizations, onEdit, onDelete }: OrgTablePr
                   <div className="text-sm text-gray-300">{org.domain || '-'}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-300">{org.industry || '-'}</div>
+                  <div className="text-sm text-gray-300">{org.industry_type || '-'}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getSizeBadgeColor(org.size)}`}>
@@ -152,8 +154,8 @@ export default function OrgTable({ organizations, onEdit, onDelete }: OrgTablePr
                 <td className="px-6 py-4 whitespace-nowrap">
                   {org.admin ? (
                     <div>
-                      <div className="text-sm text-white font-medium">{org.admin.admin_name}</div>
-                      <div className="text-xs text-gray-400">{org.admin.admin_email}</div>
+                      <div className="text-sm text-white font-medium">{org.admin.name}</div>
+                      <div className="text-xs text-gray-400">{org.admin.email}</div>
                     </div>
                   ) : (
                     <span className="text-xs text-gray-500 italic">No admin assigned</span>
@@ -175,7 +177,7 @@ export default function OrgTable({ organizations, onEdit, onDelete }: OrgTablePr
                       <Edit2 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => onDelete(org.id)}
+                      onClick={() => onDelete(org.organization_id)}
                       className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                       title="Delete"
                     >

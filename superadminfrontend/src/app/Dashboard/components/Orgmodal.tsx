@@ -621,6 +621,9 @@
 import { X, AlertCircle, EyeOff, Eye } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Organization } from './Orgtable';
+import axios from 'axios';
+import { useToast } from "../../hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 interface AdminData {
   admin_name: string;
@@ -642,11 +645,12 @@ interface OrgModalProps {
 type FormData = {
   name: string;
   domain: string;
-  industry: string;
+  industry_type: string;
   size: string;
   status: string;
   description: string;
   email: string;
+  phone: string;
   address: string;
   country: string;
   state: string;
@@ -673,28 +677,31 @@ export default function OrgModal({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
+  const { toast } = useToast();
+  const router = useRouter();
 
   const initialFormData = useMemo<FormData>(() => {
     if (organization) {
       return {
         name: organization.name || '',
         domain: organization.domain || '',
-        industry: organization.industry || '',
+        industry_type: organization.industry_type || '',
         size: organization.size || 'small',
         status: organization.status || 'active',
         description: organization.description || '',
         email: organization.email || '',
+        phone: organization.phone || '',
         address: organization.address || '',
         country: organization.country || '',
         state: organization.state || '',
         city: organization.city || '',
         pincode: organization.pincode || '',
         logo_url: organization.logo_url || '',
-        admin_name: organization.admin?.admin_name || '',
-        admin_email: organization.admin?.admin_email || '',
+        admin_name: organization.admin?.name || '',
+        admin_email: organization.admin?.email || '',
         role: organization.admin?.role || '',
         admin_phone: organization.admin?.admin_phone || '',
-        admin_password: organization.admin?.admin_password || '',
+        admin_password: organization.admin?.password || '',
         profile_image: organization.admin?.profile_image || '',
       };
     }
@@ -702,11 +709,12 @@ export default function OrgModal({
     return {
       name: '',
       domain: '',
-      industry: '',
+      industry_type: '',
       size: 'small',
       status: 'active',
       description: '',
       email: '',
+      phone: '',
       address: '',
       country: '',
       state: '',
@@ -772,40 +780,148 @@ export default function OrgModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  // const handleSubmit = async (e?: React.FormEvent) => {
+  //   e?.preventDefault?.();
+
+  //   if (!validate()) return;
+
+  //   const payload: Partial<Organization> & { admin?: AdminData } = {
+  //   name: formData.name,
+  //   domain: formData.domain || undefined,
+  //   industry_type: formData.industry_type || undefined, // ✅ fixed
+  //   description: formData.description || undefined,
+  //   email: formData.email || undefined,
+  //   phone: formData.phone || undefined, // ✅ added
+  //   address: formData.address || undefined,
+  //   state: formData.state || undefined,
+  //   city: formData.city || undefined,
+  //   pincode: formData.pincode || undefined,
+  //   logo_url: formData.logo_url || undefined,
+  //   status: formData.status || undefined,
+  // };
+
+
+  //   if (assignAdmin) {
+  //     payload.admin = {
+  //       admin_name: formData.admin_name,
+  //       admin_email: formData.admin_email,
+  //       role: formData.role,
+  //       admin_phone: formData.admin_phone || undefined,
+  //       admin_password: formData.admin_password || undefined,
+  //       profile_image: formData.profile_image,
+  //     };
+  //   }
+
+  //   try {
+  //     const response = await axios.post(
+  //       "http://localhost:8000/api/organization/register/",
+  //       payload,
+  //       {
+  //         headers: { "Content-Type": "application/json" },
+  //       }
+  //     );
+
+  //     if (response.status === 200 || response.status === 201) {
+  //       toast({
+  //         title: "Organization Saved 🎉",
+  //         description: "Organization details have been successfully saved.",
+  //       });
+
+  //       // router.push("/OrganizationList");
+  //     }
+  //   } catch (err: any) {
+  //     console.error("Save failed:", err);
+  //     toast({
+  //       title: "Save Failed",
+  //       description:
+  //         err.response?.data?.message ||
+  //         "An unexpected error occurred. Please try again.",
+  //       variant: "destructive",
+  //     });
+  //   }
+  // };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault?.();
-
     if (!validate()) return;
+    console.log('organization:', organization);
 
-    const payload: Partial<Organization> & { admin?: AdminData } = {
-      name: formData.name,
-      domain: formData.domain || undefined,
-      industry: formData.industry || undefined,
-      size: formData.size,
-      status: formData.status,
-      description: formData.description || undefined,
-      email: formData.email || undefined,
-      address: formData.address || undefined,
-      country: formData.country || undefined,
-      state: formData.state || undefined,
-      city: formData.city || undefined,
-      pincode: formData.pincode || undefined,
-      logo_url: formData.logo_url || undefined,
-    };
+    try {
+      let response;
 
-    if (assignAdmin) {
-      payload.admin = {
-        admin_name: formData.admin_name,
-        admin_email: formData.admin_email,
-        role: formData.role,
-        admin_phone: formData.admin_phone || undefined,
-        admin_password: formData.admin_password || undefined,
-        profile_image: formData.profile_image,
-      };
+      // 🟢 CASE 1: Create new organization
+      if (!organization) {
+        console.log("Creating new organization:", formData.name);
+        const orgPayload = {
+          name: formData.name,
+          domain: formData.domain,
+          industry_type: formData.industry_type,
+          description: formData.description,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          state: formData.state,
+          city: formData.city,
+          pincode: formData.pincode,
+          logo_url: formData.logo_url,
+          status: formData.status,
+        };
+
+        response = await axios.post(
+          "http://localhost:8000/api/organization/register/",
+          orgPayload,
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        toast({
+          title: "✅ Organization Created",
+          description: "You can now assign an admin from the organization editor.",
+        });
+      }
+
+      // 🟣 CASE 2: Add Admin to existing organization
+      else if (organization && assignAdmin) {
+        console.log("Adding admin to organization:", organization.organization_id);
+        const adminPayload = {
+          organization: organization.organization_id, // ✅ send FK
+          organization_name: organization.name,
+          username: formData.admin_name,
+          email: formData.admin_email,
+          admin_phone: formData.admin_phone,
+          password: formData.admin_password,
+          confirm_password: confirmPassword,
+          profile_image: formData.profile_image,
+          role_id: formData.role || "organization_admin",
+        };
+
+        response = await axios.post(
+          "http://localhost:8000/api/organization-admin/register/",
+          adminPayload,
+          { headers: { "Content-Type": "application/json" } }
+        );
+
+        toast({
+          title: "🎉 Admin Assigned",
+          description: `${formData.admin_name} is now the admin for ${organization.name}`,
+        });
+      }
+
+      if (response?.status === 200 || response?.status === 201) {
+        onSave(formData);
+        onClose();
+      }
+    } catch (err: any) {
+      console.error("Save failed:", err);
+      toast({
+        title: "Save Failed",
+        description:
+          err.response?.data?.message ||
+          "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
-
-    onSave(payload);
   };
+
 
   if (!isOpen) return null;
 
@@ -878,8 +994,8 @@ export default function OrgModal({
                 <label className="block text-sm font-medium text-gray-300 mb-2">Industry</label>
                 <input
                   type="text"
-                  value={formData.industry}
-                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                  value={formData.industry_type}
+                  onChange={(e) => setFormData({ ...formData, industry_type: e.target.value })}
                   className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   placeholder="e.g., Technology"
                 />
@@ -943,6 +1059,18 @@ export default function OrgModal({
                     <span>{errors.organization_email}</span>
                   </p>
                 )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Organization Phone
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="+91 9876543210"
+                />
               </div>
             </div>
 
