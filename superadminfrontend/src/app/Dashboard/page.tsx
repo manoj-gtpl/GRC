@@ -20,6 +20,7 @@ export default function DeveloperDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [loading, setLoading] = useState(true);
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     loadOrganizations();
@@ -130,7 +131,8 @@ export default function DeveloperDashboard() {
     try {
       if (selectedOrg) {
         // 👇 If org already exists, only add/update admin
-        const response = await fetch("http://localhost:8000/api/organization-admin/register/", {
+        console.log('selected organization',selectedOrg)
+        const response = await fetch(`${API_BASE_URL}/api/organization-admin/register/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -149,7 +151,7 @@ export default function DeveloperDashboard() {
         setSelectedOrg(null);
       } else {
         // 🆕 Create new organization + admin
-        const response = await fetch("http://localhost:8000/api/organization/register/", {
+        const response = await fetch(`${API_BASE_URL}organization/register/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(orgData),
